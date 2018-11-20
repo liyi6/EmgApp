@@ -33,3 +33,5 @@
 
 # QT
 *.user
+*.ilk
+*.pdb
