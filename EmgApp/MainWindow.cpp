@@ -42,7 +42,7 @@ void MainWindow::updateUi()
         m_graphList.append(graph);
     }
 
-    connect(&m_dataTimer, SIGNAL(timeout()), this, SLOT(onDrawData2()));
+    connect(&m_dataTimer, SIGNAL(timeout()), this, SLOT(onDrawData()));
     m_dataTimer.start(INTERVAL_SHOW);
 }
 
@@ -82,7 +82,6 @@ void MainWindow::onDrawData()
                     graph->addData(graph->dataCount(), dataList->takeLast());
                 }
 
-
                 plot->xAxis->rescale();
                 graph->rescaleValueAxis(false, true);
                 plot->xAxis->setRange(plot->xAxis->range().upper, POINT_SHOW, Qt::AlignRight);
@@ -94,37 +93,37 @@ void MainWindow::onDrawData()
     }
 }
 
-void MainWindow::onDrawData2()
-{
-    NetConnectHelper::instance()->getDataContainer(m_dataContainer);
+//void MainWindow::onDrawData2()
+//{
+//    NetConnectHelper::instance()->getDataContainer(m_dataContainer);
 
-    static QTime time(QTime::currentTime());
-    // calculate two new data points:
-    double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
+//    static QTime time(QTime::currentTime());
+//    // calculate two new data points:
+//    double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
 
-    for (int channel=0; channel<CHANNEL_SIZE; channel++) {
-        // set plot
-        QString plotControlName = "channel" + QString::number(channel);
-        QCustomPlot* plot = this->findChild<QCustomPlot*>(plotControlName);
-        if (!plot) {
-            qWarning() << "Find plot error: can't find--- " << plotControlName;
-        }
-        QPointer<QCPGraph> graph = m_graphList.at(channel);
+//    for (int channel=0; channel<CHANNEL_SIZE; channel++) {
+//        // set plot
+//        QString plotControlName = "channel" + QString::number(channel);
+//        QCustomPlot* plot = this->findChild<QCustomPlot*>(plotControlName);
+//        if (!plot) {
+//            qWarning() << "Find plot error: can't find--- " << plotControlName;
+//        }
+//        QPointer<QCPGraph> graph = m_graphList.at(channel);
 
-        QVector<double>* dataList = m_dataContainer.value(channel);
-        if (dataList) {
-            if (dataList->size() > 0) {
+//        QVector<double>* dataList = m_dataContainer.value(channel);
+//        if (dataList) {
+//            if (dataList->size() > 0) {
 
-                graph->addData(key, dataList->takeFirst());
-                dataList->clear();
+//                graph->addData(key, dataList->takeFirst());
+//                dataList->clear();
 
-                plot->xAxis->rescale();
-                graph->rescaleValueAxis(false, true);
-                plot->xAxis->setRange(key, 8, Qt::AlignRight);
-                plot->replot();
-            }
-        } else {
-            qWarning() << "Channel" << channel << "'s dataList is null.";
-        }
-    }
-}
+//                plot->xAxis->rescale();
+//                graph->rescaleValueAxis(false, true);
+//                plot->xAxis->setRange(key, 8, Qt::AlignRight);
+//                plot->replot();
+//            }
+//        } else {
+//            qWarning() << "Channel" << channel << "'s dataList is null.";
+//        }
+//    }
+//}

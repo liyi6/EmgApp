@@ -36,7 +36,7 @@ private:
     QMutex*       m_socketMutex;
     int           m_curChennel;    // 当前通道
     QByteArray    m_dataLeft;      // dataLeft为上次处理后的余留数据(当数据)
-    QHash<int, QVector<short>*>  m_dataContainer;
+    QHash<int, QVector<double>*>  m_dataContainer;
     QMutex        m_dataContainerMutex;
 };
 

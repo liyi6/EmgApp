@@ -26,7 +26,7 @@ private slots:
     void on_btnStart_clicked();
     void on_btnStop_clicked();
     void onDrawData();
-    void onDrawData2();
+    //void onDrawData2();
 
 private:
     void updateUi();

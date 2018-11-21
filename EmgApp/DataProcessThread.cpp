@@ -13,7 +13,7 @@ DataProcessThread::DataProcessThread(QTcpSocket* socket, QMutex* socketMutex)
 
     for (int channel=0; channel<CHANNEL_SIZE; channel++) {
         // set data container
-        QVector<short>* dataList = new QVector<short>();
+        QVector<double>* dataList = new QVector<double>();
         m_dataContainer.insert(channel, dataList);
     }
 
@@ -85,16 +85,16 @@ void DataProcessThread::getDataContainer(QHash<int, QVector<double>*>& tmpDataCo
         QMutexLocker locker(&m_dataContainerMutex);
         for (int channel=0; channel<CHANNEL_SIZE; channel++) {
             QVector<double>* tmpVec = tmpDataContainer.value(channel);
-            QVector<short>* srcVec = m_dataContainer.value(channel);
-            while (!srcVec->isEmpty()) {
-                double data = (double)srcVec->takeLast();
-                tmpVec->push_front(data);
-            }
+            QVector<double>* srcVec = m_dataContainer.value(channel);
+//            while (!srcVec->isEmpty()) {
+//                double data = (double)srcVec->takeLast();
+//                tmpVec->push_front(data);
+//            }
+            tmpVec->append(*srcVec);
             qDebug() << "Channel" << channel << "tmpVec size->" << tmpVec->size();
         }
     }
 }
-
 
 void DataProcessThread::dataProcess(QByteArray &data)
 {
@@ -129,22 +129,24 @@ void DataProcessThread::dataProcess(QByteArray &data)
         data.prepend(m_dataLeft);
     }
 
-    {
-        QMutexLocker locker(&m_dataContainerMutex);
-        while(data.size() > 1) {
-            short channelData = data[0] & 0x000000FF;
-            channelData |= ((data[1] << 8) & 0x0000FF00);
-            QVector<short>* dataVector = m_dataContainer.value(m_curChennel);
+    while(data.size() > 1) {
+        short channelData = data[0] & 0x000000FF;
+        channelData |= ((data[1] << 8) & 0x0000FF00);
+
+        {
+            QMutexLocker locker(&m_dataContainerMutex);
+            QVector<double>* dataVector = m_dataContainer.value(m_curChennel);
             dataVector->append(channelData);
-            //qDebug() << "--->" << dataVector->size();
-            if (dataVector->size() > 2400) {  // 丢弃超过200的数据点
-                dataVector->remove(2400, dataVector->size()-2400);
+            if (dataVector->size() > 2400) {  // 丢弃超过2400的数据点
+                qDebug() << "Channle" <<m_curChennel <<"ori vec size is " <<dataVector->size();
+                dataVector->remove(0, dataVector->size()-2400);
             }
-            m_curChennel = ++m_curChennel % 16;
-            data = data.mid(2);
-            if (data.size() == 1) {
-                m_dataLeft = data;
-            }
+        }
+
+        m_curChennel = ++m_curChennel % 16;
+        data = data.mid(2);
+        if (data.size() == 1) {
+            m_dataLeft = data;
         }
     }
 }

@@ -5,7 +5,7 @@
 
 #define   CHANNEL_SIZE   ( 16 )    // 通道数
 #define   POINT_SHOW     ( 2400 )  // 横轴显示点数
-#define   INTERVAL_SHOW  ( 2 )     // 刷新界面频率
+#define   INTERVAL_SHOW  ( 0 )     // 刷新界面频率
 
 struct Command {
     int header;
