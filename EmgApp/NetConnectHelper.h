@@ -19,7 +19,7 @@ public:
     void disconnecToHost();
     void sendStartCmd();
     void sendStopCmd();
-    void getDataContainer(QHash<int, QVector<short>>& tmpDataContainer);
+    void getDataContainer(QHash<int, QVector<double>*>& tmpDataContainer);
 
 public slots:
     void netConnected();

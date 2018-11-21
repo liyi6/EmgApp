@@ -11,6 +11,12 @@ DataProcessThread::DataProcessThread(QTcpSocket* socket, QMutex* socketMutex)
         qWarning() << "socket and socketMutex can't be null.";
     }
 
+    for (int channel=0; channel<CHANNEL_SIZE; channel++) {
+        // set data container
+        QVector<short>* dataList = new QVector<short>();
+        m_dataContainer.insert(channel, dataList);
+    }
+
     m_dataLeft.clear();
 }
 
@@ -37,7 +43,7 @@ void DataProcessThread::run()
             {
                 QMutexLocker locker(m_socketMutex);
                 data = m_socket->readAll();
-                qDebug() << "recv data->" << data;
+                //qDebug() << "recv data->" << data;
             }
 
             if (!m_headFind) {     // 如果还未读到数据头
@@ -50,17 +56,18 @@ void DataProcessThread::run()
                     m_headFind = true;
                     QByteArray payload =  data.mid(sizeof(head));
 
-                    recordFile.write(payload);
-
+                    //recordFile.write(payload);
                     dataProcess(payload);
 
                 } else {
                     qWarning() << "Head of data find failed, data will be bannished";
                 }
             } else {
-                recordFile.write(data);
+                //recordFile.write(data);
                 dataProcess(data);
             }
+        } else {
+            QThread::usleep(1);
         }
     }
 
@@ -72,17 +79,24 @@ void DataProcessThread::stop()
     m_stop = true;
 }
 
-void DataProcessThread::getDataContainer(QHash<int, QVector<short>>& tmpDataContainer)
+void DataProcessThread::getDataContainer(QHash<int, QVector<double>*>& tmpDataContainer)
 {
     {
         QMutexLocker locker(&m_dataContainerMutex);
-        for (int i=0; i<CHANNLE_SIZE; i++) {
-            QVector<short> tmpVec = tmpDataContainer.value(i);
-            QVector<short> srcVec = m_dataContainer.value(i);
-            while (!srcVec.isEmpty()) {
-                short data = srcVec.takeLast();
-                tmpVec.append(data);
+        for (int channel=0; channel<CHANNEL_SIZE; channel++) {
+            QVector<double>* tmpVec = tmpDataContainer.value(channel);
+            QVector<short>* srcVec = m_dataContainer.value(channel);
+            while (!srcVec->isEmpty()) {
+                double data = (double)srcVec->takeLast();
+                tmpVec->push_front(data);
+                tmpVec->takeLast();
             }
+
+            qDebug() << "~~~~" << tmpVec->size();
+
+//            if (tmpVec->size() > 2400) {
+//                tmpVec->remove(2400, tmpVec->size()-2400);
+//            }
         }
     }
 }
@@ -126,10 +140,11 @@ void DataProcessThread::dataProcess(QByteArray &data)
         while(data.size() > 1) {
             short channelData = data[0] & 0x000000FF;
             channelData |= ((data[1] << 8) & 0x0000FF00);
-            QVector<short> dataVector = m_dataContainer.value(m_curChennel);
-            dataVector.append(channelData);
-            if (dataVector.size() > 200) {  // 丢弃超过200的数据点
-                dataVector.remove(200, dataVector.size()-200);
+            QVector<short>* dataVector = m_dataContainer.value(m_curChennel);
+            dataVector->append(channelData);
+            //qDebug() << "--->" << dataVector->size();
+            if (dataVector->size() > 2400) {  // 丢弃超过200的数据点
+                dataVector->remove(2400, dataVector->size()-2400);
             }
             m_curChennel = ++m_curChennel % 16;
             data = data.mid(2);

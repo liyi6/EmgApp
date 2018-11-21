@@ -19,9 +19,21 @@ void MainWindow::updateUi()
     setWindowIcon(QIcon("res/logo.ico"));
     setWindowTitle("EMG Demo");
 
-    for (int i=0; i<CHANNEL_SIZE; i++) {
+    for (int i=0; i<POINT_SHOW; i++) {
+//        m_xAxisValue.append((double)POINT_SHOW-1-i);
+        m_xAxisValue.push_front((double)i);
+    }
+
+    for (int channel=0; channel<CHANNEL_SIZE; channel++) {
+        // set data container
+        QVector<double>* dataList = new QVector<double>();
+        for (int i=0; i<POINT_SHOW; i++) {
+            dataList->push_front(0);
+        }
+        m_dataContainer.insert(channel, dataList);
+
         // set plot
-        QString plotControlName = "channel" + QString::number(i);
+        QString plotControlName = "channel" + QString::number(channel);
         QCustomPlot* plot = this->findChild<QCustomPlot*>(plotControlName);
         if (!plot) {
             qWarning() << "Find plot error: can't find~~~ " << plotControlName;
@@ -36,16 +48,10 @@ void MainWindow::updateUi()
         QPointer<QCPGraph> graph = plot->addGraph(plot->xAxis, plot->axisRect()->axis(QCPAxis::atRight, 0));
         graph->setPen(QPen(QColor(250, 120, 0)));
         m_graphList.append(graph);
-
-        // add AxisTag
-        AxisTag* tag = new AxisTag(graph->valueAxis());
-        tag->setPen(graph->pen());
-        m_tagList.append(tag);
     }
 
-    connect(NetConnectHelper::instance(), SIGNAL(dataComming(int,int)), this, SLOT(onDataComming(int,int)));
     connect(&m_dataTimer, SIGNAL(timeout()), this, SLOT(onDrawData()));
-    m_dataTimer.start(40);
+    m_dataTimer.start(10);
 }
 
 void MainWindow::on_btnFsc_clicked()
@@ -63,39 +69,6 @@ void MainWindow::on_btnStop_clicked()
     NetConnectHelper::instance()->sendStopCmd();
 }
 
-
-void MainWindow::onDataComming(int channel, int data)
-{
-    if (channel < 0 || channel > 15) {
-        qWarning() << "Error channel number:" << channel;
-        return;
-    }
-
-    // set plot
-    QString plotControlName = "channel" + QString::number(channel);
-    QCustomPlot* plot = this->findChild<QCustomPlot*>(plotControlName);
-    if (!plot) {
-        qWarning() << "Find plot error: can't find--- " << plotControlName;
-    }
-    QPointer<QCPGraph> graph = m_graphList.at(channel);
-    AxisTag* tag = m_tagList.at(channel);
-
-    graph->addData(graph->dataCount(), data);
-
-    plot->xAxis->rescale();
-    graph->rescaleValueAxis(false, true);
-
-    plot->xAxis->setRange(plot->xAxis->range().upper, 2400, Qt::AlignRight);
-
-    double graphValue = graph->dataMainValue(graph->dataCount()-1);
-
-    tag->updatePosition(graphValue);
-
-    tag->setText(QString::number(graphValue, 'f', 2));
-
-    plot->replot();
-}
-
 void MainWindow::onDrawData()
 {
     NetConnectHelper::instance()->getDataContainer(m_dataContainer);
@@ -108,23 +81,22 @@ void MainWindow::onDrawData()
             qWarning() << "Find plot error: can't find--- " << plotControlName;
         }
         QPointer<QCPGraph> graph = m_graphList.at(channel);
-        AxisTag* tag = m_tagList.at(channel);
 
-        graph->addData(graph->dataCount(), data);
+        QVector<double>* dataList = m_dataContainer.value(channel);
+        if (dataList) {
+            if (dataList->size() > 0) {
+//                for (int i=0; i<dataList->size(); i++) {
+//                    graph->addData(graph->dataCount(), dataList->at(dataList->size()-i-1));
+//                }
+                graph->setData(m_xAxisValue, *dataList);
 
-        plot->xAxis->rescale();
-        graph->rescaleValueAxis(false, true);
-
-        plot->xAxis->setRange(plot->xAxis->range().upper, 2400, Qt::AlignRight);
-
-        double graphValue = graph->dataMainValue(graph->dataCount()-1);
-
-        tag->updatePosition(graphValue);
-
-        tag->setText(QString::number(graphValue, 'f', 2));
-
-        plot->replot();
+                plot->xAxis->rescale();
+                graph->rescaleValueAxis(false, true);
+                plot->xAxis->setRange(plot->xAxis->range().upper, POINT_SHOW, Qt::AlignRight);
+                plot->replot();
+            }
+        } else {
+            qWarning() << "Channel" << channel << "'s dataList is null.";
+        }
     }
-
-    m_dataContainer.clear();
 }

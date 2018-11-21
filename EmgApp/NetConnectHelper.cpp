@@ -15,7 +15,7 @@ void NetConnectHelper::clearDataProcessThread()
         m_dataProcessThread->wait(2000);
     }
 
-    if (m_dataProcessThread->isRunning()) {
+    if (m_dataProcessThread && m_dataProcessThread->isRunning()) {
         m_dataProcessThread->terminate();
     }
 
@@ -100,9 +100,9 @@ void NetConnectHelper::sendStopCmd()
     clearDataProcessThread();
 }
 
-void NetConnectHelper::getDataContainer(QHash<int, QVector<short>> &tmpDataContainer)
+void NetConnectHelper::getDataContainer(QHash<int, QVector<double>*> &tmpDataContainer)
 {
-    if (!m_dataProcessThread) {
+    if (m_dataProcessThread) {
         return m_dataProcessThread->getDataContainer(tmpDataContainer);
     }
 }

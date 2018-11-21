@@ -3,7 +3,8 @@
 
 #include <QByteArray>
 
-#define   CHANNEL_SIZE   ( 16 )  //通道数
+#define   CHANNEL_SIZE   ( 16 )    // 通道数
+#define   POINT_SHOW     ( 2400 )  // 横轴显示点数
 
 struct Command {
     int header;
