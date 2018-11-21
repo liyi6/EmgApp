@@ -89,14 +89,8 @@ void DataProcessThread::getDataContainer(QHash<int, QVector<double>*>& tmpDataCo
             while (!srcVec->isEmpty()) {
                 double data = (double)srcVec->takeLast();
                 tmpVec->push_front(data);
-                tmpVec->takeLast();
             }
-
-            qDebug() << "~~~~" << tmpVec->size();
-
-//            if (tmpVec->size() > 2400) {
-//                tmpVec->remove(2400, tmpVec->size()-2400);
-//            }
+            qDebug() << "Channel" << channel << "tmpVec size->" << tmpVec->size();
         }
     }
 }

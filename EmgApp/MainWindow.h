@@ -26,6 +26,7 @@ private slots:
     void on_btnStart_clicked();
     void on_btnStop_clicked();
     void onDrawData();
+    void onDrawData2();
 
 private:
     void updateUi();
@@ -36,7 +37,6 @@ private:
     QList<AxisTag*>            m_tagList;
     QTimer                     m_dataTimer;
     QHash<int, QVector<double>*> m_dataContainer;
-    QVector<double>            m_xAxisValue;
 };
 
 #endif // MAINWINDOW_H

@@ -19,17 +19,9 @@ void MainWindow::updateUi()
     setWindowIcon(QIcon("res/logo.ico"));
     setWindowTitle("EMG Demo");
 
-    for (int i=0; i<POINT_SHOW; i++) {
-//        m_xAxisValue.append((double)POINT_SHOW-1-i);
-        m_xAxisValue.push_front((double)i);
-    }
-
     for (int channel=0; channel<CHANNEL_SIZE; channel++) {
         // set data container
         QVector<double>* dataList = new QVector<double>();
-        for (int i=0; i<POINT_SHOW; i++) {
-            dataList->push_front(0);
-        }
         m_dataContainer.insert(channel, dataList);
 
         // set plot
@@ -50,8 +42,8 @@ void MainWindow::updateUi()
         m_graphList.append(graph);
     }
 
-    connect(&m_dataTimer, SIGNAL(timeout()), this, SLOT(onDrawData()));
-    m_dataTimer.start(10);
+    connect(&m_dataTimer, SIGNAL(timeout()), this, SLOT(onDrawData2()));
+    m_dataTimer.start(INTERVAL_SHOW);
 }
 
 void MainWindow::on_btnFsc_clicked()
@@ -73,6 +65,7 @@ void MainWindow::onDrawData()
 {
     NetConnectHelper::instance()->getDataContainer(m_dataContainer);
 
+
     for (int channel=0; channel<CHANNEL_SIZE; channel++) {
         // set plot
         QString plotControlName = "channel" + QString::number(channel);
@@ -85,14 +78,50 @@ void MainWindow::onDrawData()
         QVector<double>* dataList = m_dataContainer.value(channel);
         if (dataList) {
             if (dataList->size() > 0) {
-//                for (int i=0; i<dataList->size(); i++) {
-//                    graph->addData(graph->dataCount(), dataList->at(dataList->size()-i-1));
-//                }
-                graph->setData(m_xAxisValue, *dataList);
+
+                while (dataList->size() > 0) {
+                    graph->addData(graph->dataCount(), dataList->takeLast());
+                }
+
 
                 plot->xAxis->rescale();
                 graph->rescaleValueAxis(false, true);
                 plot->xAxis->setRange(plot->xAxis->range().upper, POINT_SHOW, Qt::AlignRight);
+                plot->replot();
+            }
+        } else {
+            qWarning() << "Channel" << channel << "'s dataList is null.";
+        }
+    }
+}
+
+void MainWindow::onDrawData2()
+{
+    NetConnectHelper::instance()->getDataContainer(m_dataContainer);
+
+    static QTime time(QTime::currentTime());
+    // calculate two new data points:
+    double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
+
+    for (int channel=0; channel<CHANNEL_SIZE; channel++) {
+        // set plot
+        QString plotControlName = "channel" + QString::number(channel);
+        QCustomPlot* plot = this->findChild<QCustomPlot*>(plotControlName);
+        if (!plot) {
+            qWarning() << "Find plot error: can't find--- " << plotControlName;
+        }
+        QPointer<QCPGraph> graph = m_graphList.at(channel);
+
+        QVector<double>* dataList = m_dataContainer.value(channel);
+        if (dataList) {
+            if (dataList->size() > 0) {
+
+                graph->addData(graph->dataCount(), dataList->takeFirst());
+                dataList->clear();
+
+                plot->xAxis->rescale();
+                graph->rescaleValueAxis(false, true);
+                plot->xAxis->setRange(key, 8, Qt::AlignRight);
                 plot->replot();
             }
         } else {
