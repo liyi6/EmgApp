@@ -65,7 +65,6 @@ void MainWindow::onDrawData()
 {
     NetConnectHelper::instance()->getDataContainer(m_dataContainer);
 
-
     for (int channel=0; channel<CHANNEL_SIZE; channel++) {
         // set plot
         QString plotControlName = "channel" + QString::number(channel);
@@ -116,7 +115,7 @@ void MainWindow::onDrawData2()
         if (dataList) {
             if (dataList->size() > 0) {
 
-                graph->addData(graph->dataCount(), dataList->takeFirst());
+                graph->addData(key, dataList->takeFirst());
                 dataList->clear();
 
                 plot->xAxis->rescale();
