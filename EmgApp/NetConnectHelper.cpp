@@ -5,7 +5,6 @@ NetConnectHelper::NetConnectHelper(QObject *)
 {
     connect(&m_socket, SIGNAL(connected()), this, SLOT(netConnected()));
     connect(&m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(netError(QAbstractSocket::SocketError)));
-    connect(&m_socket, SIGNAL(readyRead()), this, SLOT(netReadReady()));
 }
 
 void NetConnectHelper::clearDataProcessThread()
@@ -63,6 +62,11 @@ void NetConnectHelper::sendStartCmd()
 {
     clearDataProcessThread();
 
+    if (!m_dataProcessThread) {
+        m_dataProcessThread = new DataProcessThread(&m_socket, &m_socketMutex);
+        m_dataProcessThread->start();
+    }
+
     if (QAbstractSocket::ConnectedState == m_socket.state()) {
         Command cmd;
         cmd.header      = 0x5555AAAA;
@@ -117,16 +121,6 @@ void NetConnectHelper::netError(QAbstractSocket::SocketError error)
     qDebug() << "Socket error occur: " << error;
     emit netConnected(false);
 }
-
-void NetConnectHelper::netReadReady()
-{
-    if (!m_dataProcessThread) {
-        m_dataProcessThread = new DataProcessThread(&m_socket, &m_socketMutex);
-        connect(m_dataProcessThread, SIGNAL(dataComming(int,int)), this, SIGNAL(dataComming(int,int)), Qt::QueuedConnection);
-        m_dataProcessThread->start();
-    }
-}
-
 
 
 

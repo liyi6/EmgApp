@@ -19,6 +19,10 @@ void MainWindow::updateUi()
     setWindowIcon(QIcon("res/logo.ico"));
     setWindowTitle("EMG Demo");
 
+    for (int i=0; i<POINT_SHOW; i++) {
+        m_xAxisValue.append(i);
+    }
+
     for (int channel=0; channel<CHANNEL_SIZE; channel++) {
         // set data container
         QVector<double>* dataList = new QVector<double>();
@@ -42,7 +46,7 @@ void MainWindow::updateUi()
         m_graphList.append(graph);
     }
 
-    connect(&m_dataTimer, SIGNAL(timeout()), this, SLOT(onDrawData()));
+    connect(&m_dataTimer, SIGNAL(timeout()), this, SLOT(onDrawData3()));
     m_dataTimer.start(INTERVAL_SHOW);
 }
 
@@ -66,6 +70,8 @@ void MainWindow::onDrawData()
     NetConnectHelper::instance()->getDataContainer(m_dataContainer);
 
     for (int channel=0; channel<CHANNEL_SIZE; channel++) {
+
+
         // set plot
         QString plotControlName = "channel" + QString::number(channel);
         QCustomPlot* plot = this->findChild<QCustomPlot*>(plotControlName);
@@ -79,8 +85,43 @@ void MainWindow::onDrawData()
             if (dataList->size() > 0) {
 
                 while (dataList->size() > 0) {
-                    graph->addData(graph->dataCount(), dataList->takeLast());
+                    graph->addData(graph->dataCount(), dataList->takeFirst());
                 }
+
+                plot->xAxis->rescale();
+                graph->rescaleValueAxis(false, true);
+                plot->xAxis->setRange(plot->xAxis->range().upper, POINT_SHOW, Qt::AlignRight);
+                plot->replot();
+            }
+        } else {
+            qWarning() << "Channel" << channel << "'s dataList is null.";
+        }
+    }
+}
+
+void MainWindow::onDrawData3()
+{
+    NetConnectHelper::instance()->getDataContainer(m_dataContainer);
+
+    for (int channel=0; channel<CHANNEL_SIZE; channel++) {
+        // set plot
+        QString plotControlName = "channel" + QString::number(channel);
+        QCustomPlot* plot = this->findChild<QCustomPlot*>(plotControlName);
+        if (!plot) {
+            qWarning() << "Find plot error: can't find--- " << plotControlName;
+        }
+        QPointer<QCPGraph> graph = m_graphList.at(channel);
+
+        QVector<double>* dataList = m_dataContainer.value(channel);
+        if (dataList) {
+            if (dataList->size() > 0) {
+
+                if (dataList->size() > POINT_SHOW) {
+                    dataList->remove(0, dataList->size()-POINT_SHOW);
+                }
+
+                graph->setData(m_xAxisValue, *dataList);
+                //dataList->clear();
 
                 plot->xAxis->rescale();
                 graph->rescaleValueAxis(false, true);

@@ -24,7 +24,6 @@ public:
 public slots:
     void netConnected();
     void netError(QAbstractSocket::SocketError);
-    void netReadReady();
 
 signals:
     void netConnected(bool connected);
